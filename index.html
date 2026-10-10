@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ForTube</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
+</head>
+<body>
+  <div class="app" id="app">
+
+    <!-- LOGIN GATE -->
+    <div class="login-gate" id="loginGate">
+      <div class="gate-logo"><i class="fas fa-play"></i></div>
+      <div class="gate-title">ForTube</div>
+      <div class="gate-sub">Sign in to continue.<br>Create a channel and upload videos.</div>
+      <div class="gate-form">
+        <label for="gateEmail">Email address</label>
+        <input type="email" id="gateEmail" placeholder="you@example.com" autocomplete="email">
+        <label for="gatePassword">Password</label>
+        <input type="password" id="gatePassword" placeholder="••••••••" autocomplete="current-password">
+        <button class="gate-btn" id="gateLoginBtn"><i class="fas fa-sign-in-alt"></i> Login / Sign Up</button>
+        <button type="button" id="forgotPasswordLink" style="background:none;border:none;color:#22c55e;font-size:0.78rem;font-weight:700;margin-top:12px;cursor:pointer;text-decoration:underline;width:100%;">Forgot Password?</button>
+      </div>
+      <div class="gate-note">By continuing you agree to ForTube's Terms & Privacy Policy.</div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="header">
+      <div class="header-left">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="logo">
+          <div class="logo-icon"><i class="fas fa-play"></i></div>
+          <div class="logo-text">ForTube</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="settingsBtn" title="Settings"><i class="fas fa-cog"></i></button>
+        <button class="icon-btn" id="notifBtn" title="Notifications">
+          <i class="fas fa-bell"></i>
+          <span class="notif-dot" id="notifDot" style="display:none;"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="search-section">
+      <div class="search-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Search ForTube...">
+        <button class="mic-btn" id="micBtn" title="Voice search"><i class="fas fa-microphone"></i></button>
+        <button class="search-btn" id="searchBtn" title="Search"><i class="fas fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- FEED -->
+    <div class="feed" id="feed">
+      <div class="feed-title" id="feedTitle"><i class="fas fa-home"></i> Home</div>
+      <div class="empty-feed" id="emptyFeed">
+        <i class="fas fa-video"></i>
+        <h3>No videos yet</h3>
+        <p>Tap the + button below to upload your first video!</p>
+      </div>
+    </div>
+
+    <!-- SHORTS FULLSCREEN CONTAINER -->
+    <div class="shorts-fullscreen" id="shortsFullscreen">
+      <div class="shorts-scroll-container" id="shortsScrollContainer"></div>
+      <button class="shorts-close-btn" id="shortsCloseBtn"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+      <div class="nav-item active" data-tab="home">
+        <i class="fas fa-home"></i><span>Home</span>
+      </div>
+      <div class="nav-item" data-tab="shorts">
+        <i class="fas fa-bolt"></i><span>Shorts</span>
+      </div>
+      <div class="nav-plus" id="navPlus" title="Create">
+        <i class="fas fa-plus"></i>
+      </div>
+      <div class="nav-item" data-tab="subs">
+        <i class="fas fa-users"></i><span>Subscriptions</span>
+      </div>
+      <div class="nav-item" data-tab="you" id="navYou">
+        <i class="fas fa-user"></i><span>You</span>
+      </div>
+    </div>
+
+    <!-- PLUS MENU (3 Options: LIVE, UPLOAD, CREATED) -->
+    <div class="plus-menu-overlay" id="plusMenuOverlay"></div>
+    <div class="plus-menu" id="plusMenu">
+      <div class="plus-menu-option" id="plusLiveBtn">
+        <div class="plus-icon-wrap" style="background:linear-gradient(135deg,#ff3b3b,#ff6b00);">
+          <i class="fas fa-broadcast-tower"></i>
+        </div>
+        <div class="plus-text">
+          <h4>Live</h4>
+          <p>Go live streaming</p>
+        </div>
+      </div>
+      <div class="plus-menu-option" id="plusUploadBtn">
+        <div class="plus-icon-wrap" style="background:linear-gradient(135deg,#22c55e,#16a34a);">
+          <i class="fas fa-video"></i>
+        </div>
+        <div class="plus-text">
+          <h4>Upload</h4>
+          <p>Upload video from gallery</p>
+        </div>
+      </div>
+      <div class="plus-menu-option" id="plusCreatedBtn">
+        <div class="plus-icon-wrap" style="background:linear-gradient(135deg,#22c55e,#0ea5e9);">
+          <i class="fas fa-camera"></i>
+        </div>
+        <div class="plus-text">
+          <h4>Created</h4>
+          <p>Record new video</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE SETUP MODAL -->
+    <div class="live-setup-modal" id="liveSetupModal">
+      <div class="live-setup-inner">
+        <div class="live-setup-header">
+          <button class="back-btn" id="liveSetupBackBtn"><i class="fas fa-arrow-left"></i></button>
+          <h3><i class="fas fa-broadcast-tower"></i> Go Live</h3>
+        </div>
+        <div class="live-setup-body">
+          <div class="live-preview-box">
+            <video id="livePreviewVideo" autoplay playsinline muted></video>
+            <div class="live-preview-overlay">
+              <span class="live-dot"></span> PREVIEW
+            </div>
+          </div>
+          
+          <label class="metadata-label">Live Title *</label>
+          <input type="text" id="liveTitle" class="metadata-input" placeholder="e.g. Live Gaming Session">
+          
+          <label class="metadata-label">Description</label>
+          <textarea id="liveDescription" class="metadata-textarea" placeholder="Tell viewers what you're streaming..."></textarea>
+          
+          <label class="metadata-label">Category</label>
+          <select id="liveCategory" class="metadata-select">
+            <option value="Gaming">Gaming</option>
+            <option value="Sports">Sports</option>
+            <option value="Music">Music</option>
+            <option value="Education">Education</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="News">News</option>
+            <option value="Tech">Tech</option>
+            <option value="Cooking">Cooking</option>
+            <option value="Travel">Travel</option>
+            <option value="Fitness">Fitness</option>
+          </select>
+          
+          <label class="metadata-label">Tags</label>
+          <div class="tag-input-wrap">
+            <input type="text" id="liveTagInput" class="metadata-input" placeholder="gaming, live">
+            <button class="tag-add-btn" id="liveAddTagBtn"><i class="fas fa-plus"></i></button>
+          </div>
+          <div class="tags-container" id="liveTagsContainer"></div>
+          
+          <label class="metadata-label">Visibility</label>
+          <div class="visibility-row">
+            <div class="visibility-option active" data-livevis="public"><i class="fas fa-globe"></i> Public</div>
+            <div class="visibility-option" data-livevis="unlisted"><i class="fas fa-link"></i> Unlisted</div>
+          </div>
+
+          <div class="live-info-note">
+            <i class="fas fa-info-circle"></i>
+            <div>
+              <strong>Live Streaming Info:</strong><br>
+              • Your live stream will be visible to all users<br>
+              • Viewers can watch on any device<br>
+              • Views & watch time count towards monetization<br>
+              • Stream ends when you tap "End Live"
+            </div>
+          </div>
+        </div>
+        <div class="publish-bar">
+          <button class="btn btn-secondary" id="liveSetupCancelBtn">Cancel</button>
+          <button class="btn btn-primary" id="liveStartBtn"><i class="fas fa-broadcast-tower"></i> Start Live</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE STREAMING PAGE (Broadcaster) -->
+    <div class="live-stream-page" id="liveStreamPage">
+      <div class="live-stream-header">
+        <div class="live-badge-animated"><span class="live-dot"></span> LIVE</div>
+        <div class="live-viewer-count" id="liveViewerCount"><i class="fas fa-eye"></i> 0 viewers</div>
+        <button class="live-end-btn" id="liveEndBtn"><i class="fas fa-stop"></i> End Live</button>
+      </div>
+      <div class="live-stream-body">
+        <div id="liveBroadcastContainer" class="live-broadcast-container"></div>
+        <div class="live-stream-info">
+          <h3 id="liveStreamTitle">Live Stream</h3>
+          <div class="live-stream-meta">
+            <span><i class="fas fa-user"></i> <span id="liveStreamChannel">Channel</span></span>
+            <span><i class="fas fa-clock"></i> <span id="liveStreamDuration">00:00</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE WATCH PAGE (Viewer) - 9:16 with Gifts & Double Tap Like -->
+    <div class="live-watch-page" id="liveWatchPage">
+      <div class="live-watch-header">
+        <button class="back-btn" id="liveWatchBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <div class="live-watch-header-info">
+          <div class="live-watch-host" id="liveWatchHostName">Channel</div>
+          <div class="live-watch-viewers" id="liveWatchViewers"><i class="fas fa-eye"></i> 0</div>
+        </div>
+        <button class="live-watch-gift-btn" id="liveGiftBtn"><i class="fas fa-gift"></i></button>
+      </div>
+      <div class="live-watch-video-area" id="liveWatchVideoArea">
+        <div id="liveWatchContainer" class="live-watch-container"></div>
+        <div class="live-like-heart" id="liveLikeHeart"><i class="fas fa-heart"></i></div>
+        <div class="live-like-counter" id="liveLikeCounter"><i class="fas fa-heart"></i> 0</div>
+        <div class="live-gift-animation" id="liveGiftAnimation"></div>
+      </div>
+      <div class="live-watch-bottom">
+        <div class="live-watch-title" id="liveWatchTitle">Live Stream</div>
+        <div class="live-watch-actions">
+          <button class="live-action-btn" id="liveLikeBtn"><i class="fas fa-heart"></i> <span id="liveLikeCount">0</span></button>
+          <button class="live-action-btn" id="liveShareBtn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GIFT PANEL -->
+    <div class="gift-panel" id="giftPanel">
+      <div class="gift-panel-header">
+        <h3><i class="fas fa-gift"></i> Send Gift</h3>
+        <button class="gift-close-btn" id="giftCloseBtn"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="gift-coins-balance">
+        <i class="fas fa-coins"></i> <span id="giftCoinsBalance">0</span> coins
+        <button class="gift-recharge-btn" id="giftRechargeBtn">+ Recharge</button>
+      </div>
+      <div class="gift-grid" id="giftGrid"></div>
+    </div>
+
+    <!-- RECHARGE PAGE -->
+    <div class="recharge-page" id="rechargePage">
+      <div class="recharge-header">
+        <button class="back-btn" id="rechargeBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Recharge Coins</h3>
+      </div>
+      <div class="recharge-body">
+        <div class="recharge-account-info">
+          <h4><i class="fas fa-university"></i> Payment Account</h4>
+          <div class="recharge-account-row">
+            <span>Account Number:</span>
+            <strong id="rechargeAccountNumber">03010975121</strong>
+            <button class="copy-btn" id="copyAccountBtn"><i class="fas fa-copy"></i></button>
+          </div>
+          <div class="recharge-account-row">
+            <span>Account Holder:</span>
+            <strong>Saima Batool</strong>
+          </div>
+          <div class="recharge-account-row">
+            <span>Bank/Wallet:</span>
+            <strong>JazzCash</strong>
+          </div>
+        </div>
+
+        <div class="recharge-rate-info">
+          <i class="fas fa-info-circle"></i> 1 Coin = 1 Rupee • Min: 10 Coins • Max: 50000 Coins
+        </div>
+
+        <label class="metadata-label">Select Coin Package</label>
+        <div class="coin-packages" id="coinPackages"></div>
+
+        <label class="metadata-label">Or Enter Custom Amount</label>
+        <input type="number" id="customCoinAmount" class="metadata-input" min="10" max="50000" placeholder="Enter coins (10 - 50000)">
+
+        <label class="metadata-label">Transaction ID / Reference</label>
+        <input type="text" id="rechargeTxnId" class="metadata-input" placeholder="Enter transaction ID after payment">
+
+        <button class="verify-btn eligible" id="submitRechargeBtn" style="margin-top:20px;width:100%;">
+          <i class="fas fa-paper-plane"></i> Submit Recharge Request
+        </button>
+        <div id="rechargeStatus" style="display:none;margin-top:15px;padding:15px;border-radius:15px;text-align:center;font-weight:700;"></div>
+      </div>
+    </div>
+
+    <!-- SIDE DRAWER -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+    <div class="drawer" id="drawer">
+      <div class="drawer-header">
+        <h3><i class="fas fa-play-circle"></i> ForTube</h3>
+        <p id="drawerUserEmail">Not signed in</p>
+      </div>
+      <div class="drawer-links">
+        <div class="drawer-link" data-drawer="home"><i class="fas fa-home"></i> Home</div>
+        <div class="drawer-link" data-drawer="live"><i class="fas fa-broadcast-tower"></i> Live Now</div>
+        <div class="drawer-link" data-drawer="gaming"><i class="fas fa-gamepad"></i> Gaming</div>
+        <div class="drawer-link" data-drawer="sports"><i class="fas fa-futbol"></i> Sports</div>
+        <div class="drawer-link" data-drawer="yourvideos"><i class="fas fa-video"></i> Your Videos</div>
+        <div class="drawer-divider"></div>
+        <div class="drawer-link" data-drawer="trending"><i class="fas fa-fire"></i> Trending</div>
+        <div class="drawer-link" data-drawer="music"><i class="fas fa-music"></i> Music</div>
+        <div class="drawer-link" data-drawer="news"><i class="fas fa-newspaper"></i> News</div>
+        <div class="drawer-divider"></div>
+        <div class="drawer-link" data-drawer="settings"><i class="fas fa-cog"></i> Settings</div>
+        <div class="drawer-link" data-drawer="help"><i class="fas fa-question-circle"></i> Help</div>
+      </div>
+    </div>
+
+    <!-- PROFILE PANEL -->
+    <div class="profile-panel" id="profilePanel">
+      <div class="profile-header-bar">
+        <button class="back-btn" id="profileBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Your Profile</h3>
+      </div>
+      <div class="profile-body">
+        <div class="profile-card">
+          <div class="profile-avatar" id="profileAvatar"><i class="fas fa-user"></i></div>
+          <div class="profile-name" id="profileName">ForTube User</div>
+          <div class="profile-email" id="profileEmail">user@example.com</div>
+          <div id="channelStatusArea">
+            <button class="no-channel-btn" id="noChannelBtn">
+              <i class="fas fa-plus-circle"></i> No Channel — Create one
+            </button>
+          </div>
+        </div>
+        <div class="profile-section-title"><i class="fas fa-history"></i> Recently Watched</div>
+        <div class="recently-watched" id="recentlyWatched">
+          <i class="fas fa-clock" style="font-size:1.4rem; color:#64748b; display:block; margin-bottom:8px;"></i>
+          No recently watched videos.
+        </div>
+        
+        <!-- MONETIZATION + ANALYTICS BUTTONS ROW -->
+        <div class="profile-section-title"><i class="fas fa-chart-line"></i> Creator Tools</div>
+        <div class="creator-tools-row">
+          <div class="monetization-card" id="monetizationCard">
+            <div class="monetization-icon"><i class="fas fa-dollar-sign"></i></div>
+            <div class="monetization-text">
+              <h4>Monetization</h4>
+              <p id="monetizationSubtext">Check eligibility & apply</p>
+            </div>
+          </div>
+          <div class="analytics-card" id="analyticsCard">
+            <div class="analytics-icon"><i class="fas fa-chart-bar"></i></div>
+            <div class="analytics-text">
+              <h4>Analytics</h4>
+              <p>Views, Watch time, CPM/RPM</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBSCRIPTIONS PAGE -->
+    <div class="subscriptions-page" id="subscriptionsPage">
+      <div class="profile-header-bar">
+        <button class="back-btn" id="subsBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Subscriptions</h3>
+      </div>
+      <div class="subscriptions-body" id="subscriptionsBody">
+        <div class="no-subs">You haven't subscribed to any channel yet.</div>
+      </div>
+    </div>
+
+    <!-- EDIT CHANNEL -->
+    <div class="channel-setup-page" id="editChannelPage">
+      <div class="edit-channel-header">
+        <button class="back-btn" id="editChannelBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Edit Channel</h3>
+      </div>
+      <div class="channel-setup-body">
+        <div class="edit-banner" id="editBanner">
+          <div class="banner-overlay" id="editBannerOverlay">
+            <i class="fas fa-image"></i><span>Tap to change banner</span>
+          </div>
+        </div>
+        <div class="edit-avatar-section">
+          <div class="edit-avatar" id="editAvatar">
+            <span id="editAvatarEmoji">👤</span>
+            <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
+          </div>
+          <div class="edit-avatar-hint">Tap avatar to change picture</div>
+        </div>
+        <label class="metadata-label" for="editChannelName">Channel name *</label>
+        <input type="text" id="editChannelName" class="metadata-input" placeholder="e.g. Green Tech">
+        <label class="metadata-label" for="editUsername">Username / Handle *</label>
+        <input type="text" id="editUsername" class="metadata-input" placeholder="@yourhandle">
+        <label class="metadata-label" for="editCategory">Category</label>
+        <select id="editCategory" class="metadata-select">
+          <option value="Gaming">Gaming</option>
+          <option value="Sports">Sports</option>
+          <option value="Music">Music</option>
+          <option value="Education">Education</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="News">News</option>
+          <option value="Tech">Tech</option>
+          <option value="Cooking">Cooking</option>
+          <option value="Travel">Travel</option>
+          <option value="Fitness">Fitness</option>
+        </select>
+        <label class="metadata-label" for="editLanguage">Language</label>
+        <select id="editLanguage" class="metadata-select">
+          <option value="English">English</option>
+          <option value="Urdu">Urdu</option>
+          <option value="Hindi">Hindi</option>
+          <option value="Arabic">Arabic</option>
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="German">German</option>
+        </select>
+        <label class="metadata-label" for="editCurrency">Currency</label>
+        <select id="editCurrency" class="metadata-select">
+          <option value="USD">USD — US Dollar</option>
+          <option value="PKR">PKR — Pakistani Rupee</option>
+          <option value="INR">INR — Indian Rupee</option>
+          <option value="EUR">EUR — Euro</option>
+          <option value="GBP">GBP — British Pound</option>
+          <option value="AED">AED — UAE Dirham</option>
+        </select>
+        <label class="metadata-label" for="editRegion">Region / Country</label>
+        <select id="editRegion" class="metadata-select">
+          <option value="Global">Global</option>
+          <option value="Pakistan">Pakistan</option>
+          <option value="India">India</option>
+          <option value="United States">United States</option>
+          <option value="United Kingdom">United Kingdom</option>
+          <option value="UAE">UAE</option>
+          <option value="Saudi Arabia">Saudi Arabia</option>
+        </select>
+        <label class="metadata-label" for="editDesc">Channel description</label>
+        <textarea id="editDesc" class="metadata-textarea" placeholder="Tell viewers about your channel..."></textarea>
+      </div>
+      <div class="publish-bar">
+        <button class="btn btn-secondary" id="editChannelCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="editChannelSaveBtn"><i class="fas fa-save"></i> Save</button>
+      </div>
+    </div>
+
+    <!-- MONETIZATION PAGE -->
+    <div class="monetization-page" id="monetizationPage">
+      <div class="profile-header-bar">
+        <button class="back-btn" id="monetizationBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Monetization</h3>
+      </div>
+      <div class="monetization-body">
+        
+        <!-- ELIGIBILITY CARD -->
+        <div class="criteria-card" id="eligibilityCard">
+          <h2>ForTube Partner Program</h2>
+          <div class="criteria-sub" id="criteriaSub">
+            Complete all requirements to apply.<br>
+            <strong>Rate: $1 per 500 Subs • $0.50 per 1000 Hours</strong>
+          </div>
+          <div class="criteria-item">
+            <div class="ci-icon"><i class="fas fa-eye"></i></div>
+            <div class="ci-text"><h4>1,000 Views</h4><p>From other users</p></div>
+            <span class="ci-progress" id="viewsProgress">0/1000</span>
+            <i class="fas fa-check-circle ci-check pending" id="check1"></i>
+          </div>
+          <div class="criteria-item">
+            <div class="ci-icon"><i class="fas fa-clock"></i></div>
+            <div class="ci-text"><h4>4,000 Watch Hours</h4><p>From other users</p></div>
+            <span class="ci-progress" id="watchProgress">0/4000</span>
+            <i class="fas fa-check-circle ci-check pending" id="check2"></i>
+          </div>
+          <div class="criteria-item">
+            <div class="ci-icon"><i class="fas fa-users"></i></div>
+            <div class="ci-text"><h4>1,000 Subscribers</h4><p>Active subscribers</p></div>
+            <span class="ci-progress" id="subsProgress">0/1000</span>
+            <i class="fas fa-check-circle ci-check pending" id="check3"></i>
+          </div>
+          <div class="progress-line"><div class="progress-fill" id="progressFill"></div></div>
+          <button class="verify-btn" id="verifyBtn" disabled>Not Eligible Yet</button>
+        </div>
+
+        <!-- APPLY FORM -->
+        <div class="criteria-card" id="monetizationApplyPage" style="display:none;">
+          <h2>Apply for Monetization</h2>
+          <div class="criteria-sub">Your channel is eligible. Submit application.</div>
+          <label class="metadata-label">Email Address</label>
+          <input type="email" id="monetizationEmail" class="metadata-input" placeholder="Enter your email">
+          <div style="margin-top:18px;padding:16px;border:2px dashed #22c55e;border-radius:15px;text-align:center;">
+            <i class="fas fa-file-upload" style="font-size:2rem;margin-bottom:10px;"></i>
+            <p>Upload verification document.</p>
+            <input type="file" id="verificationDocument" accept="image/*,.pdf">
+          </div>
+          <button class="verify-btn eligible" id="submitMonetizationApplication" type="button" style="margin-top:18px;">
+            <i class="fas fa-paper-plane"></i> Submit Application
+          </button>
+          <div id="applicationStatus" style="display:none;margin-top:15px;padding:15px;border-radius:15px;text-align:center;font-weight:700;"></div>
+        </div>
+
+        <!-- REVENUE DASHBOARD -->
+        <div class="criteria-card" id="monetizationRevenuePage" style="display:none;">
+          <h2>💰 Monetization Dashboard</h2>
+          
+          <div style="text-align:center;margin:25px 0;">
+            <div style="font-size:15px;opacity:.75;">Total Revenue</div>
+            <div style="font-size:2.5rem;font-weight:900;margin-top:5px;color:#22c55e;">$<span id="totalRevenue">0.00</span></div>
+            <div style="font-size:0.72rem;opacity:.6;margin-top:6px;">$1 per 500 Subs • $0.50 per 1000 Hours</div>
+          </div>
+
+          <!-- Withdraw Button -->
+          <button id="withdrawRevenueBtn" type="button" class="verify-btn eligible" style="margin-top:20px;width:100%;font-size:1rem;padding:15px;">
+            <i class="fas fa-wallet"></i> Withdraw Revenue (Min $10)
+          </button>
+          
+          <!-- Withdraw Request History -->
+          <div id="withdrawHistory" style="margin-top:20px;"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ANALYTICS PAGE (Separate) -->
+    <div class="analytics-page" id="analyticsPage">
+      <div class="profile-header-bar">
+        <button class="back-btn" id="analyticsBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Analytics</h3>
+      </div>
+      <div class="analytics-body">
+        
+        <!-- Overview Cards -->
+        <div class="analytics-overview">
+          <div class="analytics-card-item">
+            <i class="fas fa-eye"></i>
+            <div class="analytics-value" id="analyticsTotalViews">0</div>
+            <div class="analytics-label">Total Views</div>
+          </div>
+          <div class="analytics-card-item">
+            <i class="fas fa-clock"></i>
+            <div class="analytics-value" id="analyticsTotalWatchTime">0</div>
+            <div class="analytics-label">Watch Hours</div>
+          </div>
+          <div class="analytics-card-item">
+            <i class="fas fa-users"></i>
+            <div class="analytics-value" id="analyticsTotalSubs">0</div>
+            <div class="analytics-label">Subscribers</div>
+          </div>
+          <div class="analytics-card-item">
+            <i class="fas fa-video"></i>
+            <div class="analytics-value" id="analyticsTotalVideos">0</div>
+            <div class="analytics-label">Total Videos</div>
+          </div>
+        </div>
+
+        <!-- CPM/RPM Cards -->
+        <div class="analytics-cpm-row">
+          <div class="analytics-cpm-card">
+            <div class="analytics-cpm-label">CPM</div>
+            <div class="analytics-cpm-value" id="analyticsCPM">$0.00</div>
+            <div class="analytics-cpm-sub">Cost per 1000 views</div>
+          </div>
+          <div class="analytics-cpm-card">
+            <div class="analytics-cpm-label">RPM</div>
+            <div class="analytics-cpm-value" id="analyticsRPM">$0.00</div>
+            <div class="analytics-cpm-sub">Revenue per 1000 views</div>
+          </div>
+        </div>
+
+        <!-- Views Graph -->
+        <div class="analytics-graph-card">
+          <div class="analytics-graph-title"><i class="fas fa-chart-line"></i> Views (Last 7 Days)</div>
+          <canvas id="analyticsViewsChart" class="analytics-canvas"></canvas>
+        </div>
+
+        <!-- Watch Time Graph -->
+        <div class="analytics-graph-card">
+          <div class="analytics-graph-title"><i class="fas fa-chart-area"></i> Watch Time (Last 7 Days)</div>
+          <canvas id="analyticsWatchChart" class="analytics-canvas"></canvas>
+        </div>
+
+        <!-- Subscribers Graph -->
+        <div class="analytics-graph-card">
+          <div class="analytics-graph-title"><i class="fas fa-chart-bar"></i> Subscribers (Last 7 Days)</div>
+          <canvas id="analyticsSubsChart" class="analytics-canvas"></canvas>
+        </div>
+
+        <!-- Countries -->
+        <div class="analytics-graph-card">
+          <div class="analytics-graph-title"><i class="fas fa-globe"></i> Top Countries</div>
+          <div id="analyticsCountries"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- WITHDRAW PAGE -->
+    <div class="withdraw-page" id="withdrawPage">
+      <div class="profile-header-bar">
+        <button class="back-btn" id="withdrawBackBtn" type="button"><i class="fas fa-arrow-left"></i></button>
+        <h3>Withdraw Revenue</h3>
+      </div>
+      <div class="monetization-body">
+        <div class="criteria-card">
+          <h2>🌍 Select Country</h2>
+          <div class="criteria-sub">Select your country to continue.</div>
+          <label class="metadata-label">Country</label>
+          <select id="withdrawCountry" class="metadata-select">
+            <option value="">Select Country</option>
+            <option value="Pakistan">🇵🇰 Pakistan</option>
+            <option value="India">🇮🇳 India</option>
+            <option value="United States">🇺🇸 United States</option>
+            <option value="United Kingdom">🇬🇧 United Kingdom</option>
+            <option value="UAE">🇦🇪 UAE</option>
+            <option value="Saudi Arabia">🇸🇦 Saudi Arabia</option>
+            <option value="Bangladesh">🇧🇩 Bangladesh</option>
+            <option value="Nigeria">🇳🇬 Nigeria</option>
+          </select>
+          <button id="continueWithdrawBtn" class="verify-btn eligible" type="button" style="margin-top:18px;width:100%;">
+            Continue <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+        <div class="criteria-card" id="withdrawBankForm" style="display:none;">
+          <h2>🏦 Bank Account Details</h2>
+          <div class="criteria-sub" id="withdrawCountryText">Enter your bank information.</div>
+          <label class="metadata-label">Account Holder Name</label>
+          <input type="text" id="withdrawAccountHolder" class="metadata-input" placeholder="Full name" />
+          <label class="metadata-label">Bank Name</label>
+          <input type="text" id="withdrawBankName" class="metadata-input" placeholder="Your bank name" />
+          <label class="metadata-label">Account Number / IBAN</label>
+          <input type="text" id="withdrawAccountNumber" class="metadata-input" placeholder="Account number or IBAN" />
+          <label class="metadata-label">Withdrawal Amount (Min $10)</label>
+          <input type="number" id="withdrawAmount" class="metadata-input" min="10" step="0.01" placeholder="Amount (min $10)" />
+          <button id="submitWithdrawBtn" class="verify-btn eligible" type="button" style="margin-top:18px;width:100%;">
+            <i class="fas fa-paper-plane"></i> Send Withdrawal Request
+          </button>
+          <div id="withdrawStatus" style="display:none;margin-top:15px;padding:15px;border-radius:15px;text-align:center;font-weight:700;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WATCH PAGE -->
+    <div class="watch-page" id="watchPage">
+      <div class="watch-header">
+        <button class="back-btn" id="watchBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3 id="watchHeaderTitle">Now watching</h3>
+      </div>
+      <div class="watch-body" id="watchBody"></div>
+    </div>
+
+    <!-- CHANNEL VIEW PAGE -->
+    <div class="channel-view-page" id="channelViewPage">
+      <div class="channel-view-header">
+        <button class="back-btn" id="channelViewBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3 id="channelViewHeaderTitle">Channel</h3>
+      </div>
+      <div class="channel-view-body" id="channelViewBody"></div>
+    </div>
+
+    <!-- CHANNEL SETUP -->
+    <div class="channel-setup-page" id="channelSetupPage">
+      <div class="channel-setup-header">
+        <button class="back-btn" id="channelSetupBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Create your channel</h3>
+      </div>
+      <div class="channel-setup-body">
+        <div class="setup-banner" id="setupBanner">
+          <div class="banner-overlay" id="bannerOverlay">
+            <i class="fas fa-image"></i><span>Tap to add banner</span>
+          </div>
+        </div>
+        <div class="setup-avatar-section">
+          <div class="setup-avatar" id="setupAvatar">
+            <span id="setupAvatarEmoji">👤</span>
+            <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
+          </div>
+        </div>
+        <label class="metadata-label" for="setupChannelName">Channel name *</label>
+        <input type="text" id="setupChannelName" class="metadata-input" placeholder="e.g. Green Tech">
+        <label class="metadata-label" for="setupUsername">Username / Handle *</label>
+        <input type="text" id="setupUsername" class="metadata-input" placeholder="@yourhandle">
+        <label class="metadata-label" for="setupCategory">Category</label>
+        <select id="setupCategory" class="metadata-select">
+          <option value="Gaming">Gaming</option>
+          <option value="Sports">Sports</option>
+          <option value="Music">Music</option>
+          <option value="Education">Education</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="News">News</option>
+          <option value="Tech">Tech</option>
+          <option value="Cooking">Cooking</option>
+          <option value="Travel">Travel</option>
+          <option value="Fitness">Fitness</option>
+        </select>
+        <label class="metadata-label" for="setupLanguage">Language</label>
+        <select id="setupLanguage" class="metadata-select">
+          <option value="English">English</option>
+          <option value="Urdu">Urdu</option>
+          <option value="Hindi">Hindi</option>
+          <option value="Arabic">Arabic</option>
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="German">German</option>
+        </select>
+        <label class="metadata-label" for="setupCurrency">Currency</label>
+        <select id="setupCurrency" class="metadata-select">
+          <option value="USD">USD — US Dollar</option>
+          <option value="PKR">PKR — Pakistani Rupee</option>
+          <option value="INR">INR — Indian Rupee</option>
+          <option value="EUR">EUR — Euro</option>
+          <option value="GBP">GBP — British Pound</option>
+          <option value="AED">AED — UAE Dirham</option>
+        </select>
+        <label class="metadata-label" for="setupRegion">Region / Country</label>
+        <select id="setupRegion" class="metadata-select">
+          <option value="Global">Global</option>
+          <option value="Pakistan">Pakistan</option>
+          <option value="India">India</option>
+          <option value="United States">United States</option>
+          <option value="United Kingdom">United Kingdom</option>
+          <option value="UAE">UAE</option>
+          <option value="Saudi Arabia">Saudi Arabia</option>
+        </select>
+        <label class="metadata-label" for="setupDesc">Channel description</label>
+        <textarea id="setupDesc" class="metadata-textarea" placeholder="Tell viewers about your channel..."></textarea>
+      </div>
+      <div class="publish-bar">
+        <button class="btn btn-secondary" id="channelSetupCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="channelSetupCreateBtn"><i class="fas fa-check-circle"></i> Create Channel</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="settings-page" id="settingsPage">
+      <div class="profile-header-bar">
+        <button class="back-btn" id="settingsBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Settings</h3>
+      </div>
+      <div class="settings-body">
+        <div class="settings-section">
+          <h4><i class="fas fa-user-cog"></i> Account</h4>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-envelope"></i>
+              <span>Email<small id="settingsEmail">user@example.com</small></span>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-user-circle"></i>
+              <span>Channel</span>
+            </div>
+            <span class="small-action-btn" id="settingsChannelStatus">None</span>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-key"></i>
+              <span>Change Password</span>
+            </div>
+            <button class="small-action-btn" id="changePasswordBtn">Reset</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4><i class="fas fa-sliders-h"></i> Preferences</h4>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-language"></i>
+              <span>Language</span>
+            </div>
+            <select id="settingsLanguage">
+              <option value="English">English</option>
+              <option value="Urdu">Urdu</option>
+              <option value="Hindi">Hindi</option>
+              <option value="Arabic">Arabic</option>
+              <option value="Spanish">Spanish</option>
+              <option value="French">French</option>
+              <option value="German">German</option>
+            </select>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-globe"></i>
+              <span>Region</span>
+            </div>
+            <select id="settingsRegion">
+              <option value="Global">Global</option>
+              <option value="Pakistan">Pakistan</option>
+              <option value="India">India</option>
+              <option value="United States">United States</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="UAE">UAE</option>
+            </select>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-money-bill-wave"></i>
+              <span>Currency</span>
+            </div>
+            <select id="settingsCurrency">
+              <option value="USD">USD</option>
+              <option value="PKR">PKR</option>
+              <option value="INR">INR</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="AED">AED</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4><i class="fas fa-toggle-on"></i> Playback & Privacy</h4>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-closed-captioning"></i>
+              <span>Subtitles</span>
+            </div>
+            <div class="settings-toggle" id="toggleSubtitles"></div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-ad"></i>
+              <span>Restricted mode<small>Hide mature content</small></span>
+            </div>
+            <div class="settings-toggle" id="toggleRestricted"></div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-history"></i>
+              <span>Save watch history</span>
+            </div>
+            <div class="settings-toggle active" id="toggleHistory"></div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-bell"></i>
+              <span>Notifications</span>
+            </div>
+            <div class="settings-toggle active" id="toggleNotifications"></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4><i class="fas fa-shield-alt"></i> Data & Storage</h4>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-database"></i>
+              <span>Clear cache</span>
+            </div>
+            <button class="small-action-btn" id="clearCacheBtn">Clear</button>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-download"></i>
+              <span>Download quality</span>
+            </div>
+            <select id="settingsQuality">
+              <option value="auto">Auto</option>
+              <option value="1080p">1080p</option>
+              <option value="720p">720p</option>
+              <option value="480p">480p</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4><i class="fas fa-info-circle"></i> About</h4>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-info"></i>
+              <span>App version</span>
+            </div>
+            <span style="font-size:0.72rem;color:#64748b;">v1.1.0</span>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-file-alt"></i>
+              <span>Terms & Privacy</span>
+            </div>
+            <button class="small-action-btn" id="termsBtn">View</button>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-envelope"></i>
+              <span>Contact support</span>
+            </div>
+            <button class="small-action-btn" id="contactBtn">Email</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4><i class="fas fa-sign-out-alt"></i> Account Actions</h4>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-sign-out-alt"></i>
+              <span>Log out</span>
+            </div>
+            <button class="small-action-btn danger-btn" id="logoutBtn">Log out</button>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <i class="fas fa-trash-alt"></i>
+              <span>Delete account</span>
+            </div>
+            <button class="small-action-btn danger-btn" id="deleteAccountBtn">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS PAGE -->
+    <div class="notifications-page" id="notificationsPage">
+      <div class="profile-header-bar">
+        <button class="back-btn" id="notificationsBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Notifications</h3>
+      </div>
+      <div class="notifications-body" id="notificationsBody">
+        <div class="no-notif">No notifications yet</div>
+      </div>
+    </div>
+
+    <!-- CAMERA PANEL (Full Screen 9:16) -->
+    <div class="camera-panel" id="cameraPanel">
+      <div class="camera-preview">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <i class="fas fa-camera"></i>
+          <div>Camera access required.<br>Tap record button to start.</div>
+        </div>
+        <div class="camera-top">
+          <button class="cam-close" id="camClose"><i class="fas fa-times"></i></button>
+          <div class="cam-modes">
+            <button class="cam-mode active" data-mode="video">VIDEO</button>
+            <button class="cam-mode" data-mode="short">SHORT</button>
+          </div>
+          <button class="cam-flip" id="camFlip"><i class="fas fa-sync-alt"></i></button>
+        </div>
+      </div>
+      <div class="camera-bottom">
+        <div class="upload-types">
+          <button class="upload-type-btn" id="longVideoBtn"><i class="fas fa-film"></i> Long</button>
+          <button class="upload-type-btn active" id="shortVideoBtn"><i class="fas fa-bolt"></i> Short</button>
+        </div>
+        <div class="record-row">
+          <button class="gallery-btn" id="galleryBtn"><i class="fas fa-images"></i></button>
+          <button class="record-btn" id="recordBtn">
+            <div class="record-timer" id="recordTimer">00:00</div>
+          </button>
+          <button class="gallery-btn" id="galleryBtn2"><i class="fas fa-photo-video"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HIDDEN INPUTS -->
+    <input type="file" id="nativeGalleryInput" accept="video/*">
+    <input type="file" id="thumbnailInput" accept="image/*">
+    <input type="file" id="profilePicInput" accept="image/*">
+    <input type="file" id="bannerInput" accept="image/*">
+
+    <!-- UPLOAD MODAL -->
+    <div class="upload-details-modal" id="uploadDetailsModal">
+      <div class="upload-details-inner">
+        <h3><i class="fas fa-upload"></i> Upload details</h3>
+        <div class="upload-preview-box" id="uploadPreviewBox">
+          <i class="fas fa-play-circle"></i>
+          <span class="preview-dur" id="uploadPreviewDur">0:00</span>
+        </div>
+        <label for="uploadTitle">Video title</label>
+        <input type="text" id="uploadTitle" placeholder="Give your video a title">
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="uploadCancel">Cancel</button>
+          <button class="btn btn-primary" id="uploadNextBtn"><i class="fas fa-arrow-right"></i> Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- METADATA PAGE -->
+    <div class="metadata-page" id="metadataPage">
+      <div class="metadata-header">
+        <button class="back-btn" id="metadataBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Video details</h3>
+      </div>
+      <div class="metadata-body">
+        <label class="metadata-label">Thumbnail</label>
+        <div class="thumbnail-picker" id="thumbnailPicker">
+          <video id="thumbPreviewVideo" muted playsinline></video>
+          <div class="thumb-overlay" id="thumbOverlay">
+            <i class="fas fa-camera-retro"></i><span>Tap to set thumbnail</span>
+          </div>
+        </div>
+        <div class="thumb-action-row">
+          <button class="thumb-action-btn" id="autoThumbBtn" type="button"><i class="fas fa-magic"></i> Auto-generate</button>
+          <button class="thumb-action-btn" id="customThumbBtn" type="button"><i class="fas fa-upload"></i> Upload custom</button>
+        </div>
+
+        <label class="metadata-label" for="metaTitle">Title *</label>
+        <input type="text" id="metaTitle" class="metadata-input" placeholder="Video title">
+        <label class="metadata-label" for="metaDescription">Description</label>
+        <textarea id="metaDescription" class="metadata-textarea" placeholder="Tell viewers about video"></textarea>
+        <label class="metadata-label" for="metaCategory">Category</label>
+        <select id="metaCategory" class="metadata-select">
+          <option value="Gaming">Gaming</option>
+          <option value="Sports">Sports</option>
+          <option value="Music">Music</option>
+          <option value="Education">Education</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="News">News</option>
+          <option value="Tech">Tech</option>
+          <option value="Cooking">Cooking</option>
+          <option value="Travel">Travel</option>
+          <option value="Fitness">Fitness</option>
+        </select>
+        <label class="metadata-label" for="metaTagInput">Tags</label>
+        <div class="tag-input-wrap">
+          <input type="text" id="metaTagInput" class="metadata-input" placeholder="gaming, tutorial">
+          <button class="tag-add-btn" id="addTagBtn"><i class="fas fa-plus"></i></button>
+        </div>
+        <div class="tags-container" id="tagsContainer"></div>
+        <label class="metadata-label">Visibility</label>
+        <div class="visibility-row">
+          <div class="visibility-option active" data-vis="public"><i class="fas fa-globe"></i> Public</div>
+          <div class="visibility-option" data-vis="unlisted"><i class="fas fa-link"></i> Unlisted</div>
+          <div class="visibility-option" data-vis="private"><i class="fas fa-lock"></i> Private</div>
+        </div>
+        <div id="uploadProgressWrap" style="display:none; margin-top:18px;">
+          <div style="font-size:0.75rem;color:#22c55e;font-weight:700;margin-bottom:6px;" id="uploadProgressText">Uploading... 0%</div>
+          <div style="height:8px;background:#1e293b;border-radius:8px;overflow:hidden;">
+            <div id="uploadProgressFill" style="height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:8px;transition:width 0.3s;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="publish-bar">
+        <button class="btn btn-secondary" id="metadataCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="metadataPublishBtn"><i class="fas fa-cloud-upload-alt"></i> Publish</button>
+      </div>
+    </div>
+
+    <!-- MY VIDEO ACTIONS MENU -->
+    <div class="video-actions-overlay" id="videoActionsOverlay"></div>
+    <div class="video-actions-menu" id="videoActionsMenu">
+      <div class="video-actions-header">
+        <div class="video-actions-thumb" id="vaThumb"></div>
+        <div class="video-actions-info">
+          <div class="video-actions-title" id="vaTitle">Video title</div>
+          <div class="video-actions-meta" id="vaMeta">0 views</div>
+        </div>
+      </div>
+      <div class="video-actions-list">
+        <div class="video-action-item" id="vaEditBtn">
+          <i class="fas fa-edit"></i>
+          <div>
+            <div class="va-label">Edit Video</div>
+            <div class="va-sub">Title, description, category</div>
+          </div>
+        </div>
+        <div class="video-action-item" id="vaPrivacyBtn">
+          <i class="fas fa-globe"></i>
+          <div>
+            <div class="va-label">Change Privacy</div>
+            <div class="va-sub" id="vaPrivacySub">Public</div>
+          </div>
+        </div>
+        <div class="video-action-item danger" id="vaDeleteBtn">
+          <i class="fas fa-trash-alt"></i>
+          <div>
+            <div class="va-label">Delete Video</div>
+            <div class="va-sub">Permanently remove</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDIT VIDEO PAGE -->
+    <div class="edit-video-page" id="editVideoPage">
+      <div class="metadata-header">
+        <button class="back-btn" id="editVideoBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Edit Video</h3>
+      </div>
+      <div class="metadata-body">
+        <label class="metadata-label">Thumbnail</label>
+        <div class="thumbnail-picker" id="editVideoThumb">
+          <div class="thumb-overlay">
+            <i class="fas fa-camera-retro"></i><span>Tap to change</span>
+          </div>
+        </div>
+        <input type="file" id="editVideoThumbInput" accept="image/*" style="display:none;">
+
+        <label class="metadata-label">Title *</label>
+        <input type="text" id="editVideoTitle" class="metadata-input">
+
+        <label class="metadata-label">Description</label>
+        <textarea id="editVideoDesc" class="metadata-textarea"></textarea>
+
+        <label class="metadata-label">Category</label>
+        <select id="editVideoCategory" class="metadata-select">
+          <option value="Gaming">Gaming</option>
+          <option value="Sports">Sports</option>
+          <option value="Music">Music</option>
+          <option value="Education">Education</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="News">News</option>
+          <option value="Tech">Tech</option>
+          <option value="Cooking">Cooking</option>
+          <option value="Travel">Travel</option>
+          <option value="Fitness">Fitness</option>
+        </select>
+
+        <label class="metadata-label">Privacy</label>
+        <div class="visibility-row">
+          <div class="visibility-option" data-vis="public"><i class="fas fa-globe"></i> Public</div>
+          <div class="visibility-option" data-vis="unlisted"><i class="fas fa-link"></i> Unlisted</div>
+          <div class="visibility-option" data-vis="private"><i class="fas fa-lock"></i> Private</div>
+        </div>
+      </div>
+      <div class="publish-bar">
+        <button class="btn btn-secondary" id="editVideoCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="editVideoSaveBtn"><i class="fas fa-save"></i> Save Changes</button>
+      </div>
+    </div>
+
+    <!-- TERMS & PRIVACY PAGE -->
+    <div class="terms-page" id="termsPage">
+      <div class="profile-header-bar">
+        <button class="back-btn" id="termsBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3>Terms & Privacy</h3>
+      </div>
+      <div class="terms-body">
+        <div class="terms-section">
+          <h2>1. Acceptance of Terms</h2>
+          <p>By using ForTube, you agree to these Terms of Service. If you do not agree, please do not use our platform. We may update these terms from time to time, and continued use means you accept any changes.</p>
+        </div>
+        <div class="terms-section">
+          <h2>2. User Accounts</h2>
+          <p>You are responsible for maintaining the confidentiality of your account credentials. You must be at least 13 years old to use ForTube. You agree to provide accurate information and to keep your account secure.</p>
+        </div>
+        <div class="terms-section">
+          <h2>3. Content Guidelines</h2>
+          <p>You may not upload content that is:</p>
+          <ul>
+            <li>Illegal, harmful, or threatening</li>
+            <li>Copyrighted without permission (Auto copyright detection enabled - copied videos will be deleted)</li>
+            <li>Hateful, abusive, or discriminatory</li>
+            <li>Sexually explicit or violent (Channel will be banned automatically)</li>
+            <li>Spam or misleading</li>
+          </ul>
+        </div>
+        <div class="terms-section">
+          <h2>4. Content Ownership</h2>
+          <p>You retain ownership of videos you upload. By uploading, you grant ForTube a license to display, distribute, and promote your content on the platform. You confirm you have rights to all uploaded content.</p>
+        </div>
+        <div class="terms-section">
+          <h2>5. Privacy Policy</h2>
+          <p>We collect minimal data to provide our service:</p>
+          <ul>
+            <li>Email address for account login</li>
+            <li>Channel information you provide</li>
+            <li>Videos you upload</li>
+            <li>Basic usage analytics</li>
+          </ul>
+          <p>We do not sell your personal information to third parties. Your data is stored securely using Supabase infrastructure.</p>
+        </div>
+        <div class="terms-section">
+          <h2>6. Monetization</h2>
+          <p>To be eligible for monetization, you must meet our criteria: 1,000 views, 4,000 watch hours, and 1,000 subscribers. <strong>Revenue is calculated at $1 per 500 subscribers and $0.50 per 1,000 watch hours.</strong> Withdrawals are subject to admin review. Minimum withdrawal amount is $10.00.</p>
+        </div>
+        <div class="terms-section">
+          <h2>7. Content Moderation</h2>
+          <p>We reserve the right to remove any content that violates these terms. Accounts that repeatedly violate guidelines may be suspended or terminated without notice. Copied/re-uploaded content will be automatically detected and removed. Adult content will result in immediate channel ban.</p>
+        </div>
+        <div class="terms-section">
+          <h2>8. Termination</h2>
+          <p>You may delete your account at any time. We may terminate accounts that violate our terms. Upon termination, your videos will be removed from public view.</p>
+        </div>
+        <div class="terms-section">
+          <h2>9. Disclaimer</h2>
+          <p>ForTube is provided "as is" without warranties. We are not liable for any content uploaded by users or any damages arising from platform use.</p>
+        </div>
+        <div class="terms-section">
+          <h2>10. Contact</h2>
+          <p>For any questions about these terms, contact us at <strong>syedtechnical63@gmail.com</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUPPORT / CHAT PAGE -->
+    <div class="support-page" id="supportPage">
+      <div class="profile-header-bar">
+        <button class="back-btn" id="supportBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <h3><i class="fas fa-headset"></i> Support Chat</h3>
+      </div>
+      <div class="support-body" id="supportBody">
+        <div class="support-message bot">
+          <div class="support-avatar"><i class="fas fa-robot"></i></div>
+          <div class="support-bubble">
+            <div class="support-text">Hi! 👋 Welcome to ForTube Support. How can I help you today?</div>
+            <div class="support-time">Just now</div>
+          </div>
+        </div>
+        <div class="support-message bot">
+          <div class="support-avatar"><i class="fas fa-robot"></i></div>
+          <div class="support-bubble">
+            <div class="support-text">You can ask me about:</div>
+            <div class="support-quick">
+              <button class="quick-btn" data-msg="How to upload video?">How to upload video?</button>
+              <button class="quick-btn" data-msg="How to go live?">How to go live?</button>
+              <button class="quick-btn" data-msg="Monetization requirements">Monetization requirements</button>
+              <button class="quick-btn" data-msg="Video not playing">Video not playing</button>
+            </div>
+            <div class="support-time">Just now</div>
+          </div>
+        </div>
+      </div>
+      <div class="support-input-bar">
+        <input type="text" id="supportInput" placeholder="Type your message..." autocomplete="off">
+        <button class="support-send-btn" id="supportSendBtn"><i class="fas fa-paper-plane"></i></button>
+      </div>
+    </div>
+
+    <!-- ALERT POPUP -->
+    <div class="alert-popup" id="alertPopup">
+      <div class="alert-popup-inner">
+        <div class="alert-icon" id="alertIcon"><i class="fas fa-broadcast-tower"></i></div>
+        <h3 id="alertTitle">Alert</h3>
+        <p id="alertMessage"></p>
+        <button class="alert-btn" id="alertCloseBtn">Got it</button>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
